@@ -16,7 +16,7 @@
  *
  * @since 1.0.0
  */
-class GLTW_Latest_Tweets_Widget extends WP_Widget {
+class Genesis_Official_Twitter_Widget extends WP_Widget {
 
 	/**
 	 * Holds widget settings defaults, populated in constructor.
@@ -53,7 +53,7 @@ class GLTW_Latest_Tweets_Widget extends WP_Widget {
 			'height'  => 250,
 		);
 
-		$this->WP_Widget( 'latest-tweets', __( 'Genesis - Latest Tweets', 'genesis-latest-tweets' ), $widget_ops, $control_ops );
+		$this->WP_Widget( 'latest-tweets', __( 'Genesis Twitter Widget', 'genesis-latest-tweets' ), $widget_ops, $control_ops );
 
 	}
 
@@ -82,59 +82,76 @@ class GLTW_Latest_Tweets_Widget extends WP_Widget {
 		$key = $instance['twitter_id'] . '-' . $instance['twitter_num'] . '-' . $instance['twitter_duration'];
 
 		$tweets = get_transient( $key );
+		
+		$screen_name     = $instance['twitter_id'];
 
 		if ( ! $tweets ) {
-			$count   = isset( $instance['twitter_hide_replies'] ) ? (int) $instance['twitter_num'] + 100 : (int) $instance['twitter_num'];
-			$twitter = wp_remote_retrieve_body(
-				wp_remote_request(
-					sprintf( 'http://api.twitter.com/1/statuses/user_timeline.json?screen_name=%s&count=%s&trim_user=1', $instance['twitter_id'], $count ),
-					array( 'timeout' => 100, )
-				)
-			);
+			
+			global $Genesis_Twitter_API;
+		
+			// We could cache the rendered HTML right here, but this keeps caching abstracted in library
+			$Genesis_Twitter_API->api_enable_cache( absint( $instance['twitter_duration'] ) * 60 );
+			
+			// Build API params for "statuses/user_timeline" // https://dev.twitter.com/docs/api/1.1/get/statuses/user_timeline
+			$screen_name     = $instance['twitter_id'];
+			$trim_user       = true;
+			$include_rts     = ! empty($instance['twitter_include_retweets']);
+			$exclude_replies = ! empty($instance['twitter_hide_replies']);
+			$count           = isset( $instance['twitter_hide_replies'] ) ? (int) $instance['twitter_num'] * 3 : (int) $instance['twitter_num'];
+			$params          = compact('count','exclude_replies','include_rts','trim_user','screen_name');
+			
+			$tweets = $Genesis_Twitter_API->api_get('statuses/user_timeline', $params );
+			
+			if( isset($tweets[$count]) )
+				$tweets = array_slice( $tweets, 0, $count );
 
-			$json = json_decode( $twitter );
+			$time = ( absint( $instance['twitter_duration'] ) * 60 );
 
-			if ( ! $twitter ) {
-				$tweets[] = '<li>' . __( 'The Twitter API is taking too long to respond. Please try again later.', 'genesis-latest-tweets' ) . '</li>' . "\n";
-			}
-			elseif ( is_wp_error( $twitter ) ) {
-				$tweets[] = '<li>' . __( 'There was an error while attempting to contact the Twitter API. Please try again.', 'genesis-latest-tweets' ) . '</li>' . "\n";
-			}
-			elseif ( is_object( $json ) && $json->error ) {
-				$tweets[] = '<li>' . __( 'The Twitter API returned an error while processing your request. Please try again.', 'genesis-latest-tweets' ) . '</li>' . "\n";
-			}
-			else {
-				/** Build the tweets array */
-				foreach ( (array) $json as $tweet ) {
-					/** Don't include @ replies (if applicable) */
-					if ( $instance['twitter_hide_replies'] && $tweet->in_reply_to_user_id )
-						continue;
-
-					/** Stop the loop if we've got enough tweets */
-					if ( ! empty( $tweets[(int)$instance['twitter_num'] - 1] ) )
-						break;
-
-					/** Add tweet to array */
-					$timeago = sprintf( __( 'about %s ago', 'genesis-latest-tweets' ), human_time_diff( strtotime( $tweet->created_at ) ) );
-					$timeago_link = sprintf( '<a href="%s" rel="nofollow">%s</a>', esc_url( sprintf( 'http://twitter.com/%s/status/%s', $instance['twitter_id'], $tweet->id_str ) ), esc_html( $timeago ) );
-
-					$tweets[] = '<li>' . gltw_tweet_linkify( $tweet->text ) . ' <span style="font-size: 85%;">' . $timeago_link . '</span></li>' . "\n";
-				}
-
-				/** Just in case */
-				$tweets = array_slice( (array) $tweets, 0, (int) $instance['twitter_num'] );
-
-				if ( $instance['follow_link_show'] && $instance['follow_link_text'] )
-					$tweets[] = '<li class="last"><a href="' . esc_url( 'http://twitter.com/'.$instance['twitter_id'] ).'">'. esc_html( $instance['follow_link_text'] ) .'</a></li>';
-
-				$time = ( absint( $instance['twitter_duration'] ) * 60 );
-
-				/** Save them in transient */
-				set_transient( $instance['twitter_id'].'-'.$instance['twitter_num'].'-'.$instance['twitter_duration'], $tweets, $time );
-			}
+			/** Save them in transient */
+			set_transient( $instance['twitter_id'].'-'.$instance['twitter_num'].'-'.$instance['twitter_duration'], $tweets, $time );
+			
 		}
-		foreach( (array) $tweets as $tweet )
-			echo $tweet;
+		
+		if ( $instance['follow_link_show'] && $instance['follow_link_text'] )
+				$follow_link = '<li class="last"><a href="' . esc_url( 'http://twitter.com/'.$instance['twitter_id'] ).'">'. esc_html( $instance['follow_link_text'] ) .'</a></li>';
+		
+		$tweet_count = 0;
+		
+		//print_r( $tweets ); 
+		
+		foreach( (array) $tweets as $tweet ){
+					if ( $tweet_count >= (int)$instance['twitter_num'] )
+						break;
+			extract( $tweet );
+			
+            $link = esc_html( 'http://twitter.com/'.$screen_name.'/status/'.$id_str);
+            
+            // render nice datetime, unless theme overrides with filter
+            $date = apply_filters( 'latest_tweets_render_date', $created_at );
+            if( $date === $created_at ){
+                $date = esc_html( gtw_tweet_relative_date($created_at) );
+                $date = '<span style="font-size: 85%;">'.$date.'</span>';
+            }
+            
+            // render and linkify tweet, unless theme overrides with filter
+            $html = apply_filters('latest_tweets_render_text', $text );
+            if( $html === $text ){
+                $html = gtw_tweet_linkify( $text );
+            }
+            
+            // piece together the whole tweet, allowing overide
+            $final = apply_filters('latest_tweets_render_tweet', $html, $date, $link );
+            if( $final === $html ){
+                $final = '<li><span class="tweet-text">'.$html.'</span>'.
+                         ' <span class="tweet-details"><a href="'.$link.'" target="_blank" rel="nofollow">'.$date.'</a></span></li>';
+            }
+            
+            echo $final;
+            
+            $tweet_count++;
+		}
+			
+			echo $follow_link;
 
 		echo '</ul>' . "\n";
 
