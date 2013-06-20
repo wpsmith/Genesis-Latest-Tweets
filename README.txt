@@ -1,5 +1,5 @@
 === Genesis Latest Tweets ===
-Contributors: wpsmith
+Contributors: wpsmith, ericmann
 Donate link: http://wpsmith.net/
 Tags: genesis, genesiswp, twitter, tweets
 Requires at least: 3.3.1
