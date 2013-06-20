@@ -45,8 +45,8 @@ class Genesis_Twitter_Widget_Admin_Settings extends Genesis_Admin_Boxes {
 		$menu_ops = array(
 			'submenu' => array(
 				'parent_slug' => 'genesis',
-				'page_title'  => __( 'Genesis - Twitter Widget Settings', 'genesis-latest-tweets' ),
-				'menu_title'  => __( 'Twitter Widget Settings', 'genesis-latest-tweets' )
+				'page_title'  => __( 'Genesis - Twitter Widget Settings', GENESIS_TWITTER_DOMAIN ),
+				'menu_title'  => __( 'Twitter Widget Settings', GENESIS_TWITTER_DOMAIN )
 			)
 		);
 
@@ -169,24 +169,24 @@ class Genesis_Twitter_Widget_Admin_Settings extends Genesis_Admin_Boxes {
 
 		?>
 		<p>
-			<label for="twitter-api--consumer-key"><?php _e( 'OAuth Consumer Key:', 'genesis-latest-tweets' ); ?></label><br />
+			<label for="twitter-api--consumer-key"><?php _e( 'OAuth Consumer Key:', GENESIS_TWITTER_DOMAIN ); ?></label><br />
 			<input type="text" size="64" name="genesis_twitter_widget_field[consumer_key]" id="twitter-api--consumer-key" value="<?php echo esc_html($consumer_key)?>" />
 		</p>
 		<p>
-			<label for="twitter-api--consumer-secret"><?php _e( 'OAuth Consumer Secret:', 'genesis-latest-tweets' ); ?></label><br />
+			<label for="twitter-api--consumer-secret"><?php _e( 'OAuth Consumer Secret:', GENESIS_TWITTER_DOMAIN ); ?></label><br />
 			<input type="text" size="64" name="genesis_twitter_widget_field[consumer_secret]" id="twitter-api--consumer-secret" value="<?php echo esc_html($consumer_secret)?>" />
 		</p>
 		<p>
-			<label for="twitter-api--access-key"><?php _e( 'OAuth Access Token:', 'genesis-latest-tweets' ); ?></label><br />
+			<label for="twitter-api--access-key"><?php _e( 'OAuth Access Token:', GENESIS_TWITTER_DOMAIN ); ?></label><br />
 			<input type="text" size="64" name="genesis_twitter_widget_field[access_key]" id="twitter-api--access-key" value="<?php echo esc_html($access_key)?>" />
 		</p>
 		<p>
-			<label for="twitter-api--access-secret"><?php _e( 'OAuth Access Secret:', 'genesis-latest-tweets' ); ?></label><br />
+			<label for="twitter-api--access-secret"><?php _e( 'OAuth Access Secret:', GENESIS_TWITTER_DOMAIN ); ?></label><br />
 			<input type="text" size="64" name="genesis_twitter_widget_field[access_secret]" id="twitter-api--access-secret" value="<?php echo esc_html($access_secret)?>" />
 		</p>
 		<small>
-		<?php echo esc_html__( 'These details are available in', 'genesis-latest-tweets' )?> 
-		<a href="https://dev.twitter.com/apps" target="_blank"><?php echo esc_html__( 'your Twitter dashboard', 'genesis-latest-tweets' )?></a>
+		<?php echo esc_html__( 'These details are available in', GENESIS_TWITTER_DOMAIN )?> 
+		<a href="https://dev.twitter.com/apps" target="_blank"><?php echo esc_html__( 'your Twitter dashboard', GENESIS_TWITTER_DOMAIN )?></a>
 		</small>
 		<?php
 
@@ -218,7 +218,7 @@ function twitter_api_admin_render_login( $consumer_key, $consumer_secret ){
     // we're storing permanently - not using session here, because WP provides no session API.
     genesis_twitter_api_config( array( 'request_secret' => $Token->secret ) );
     $href = $Token->get_authorization_url();
-    echo '<p><a class="button-primary" href="',esc_html($href),'">'.esc_html__('Connect to Twitter', 'genesis-latest-tweets' ).'</a></p>';
+    echo '<p><a class="button-primary" href="',esc_html($href),'">'.esc_html__('Connect to Twitter', GENESIS_TWITTER_DOMAIN ).'</a></p>';
     echo '<p>&nbsp;</p>';
 }
  
@@ -230,7 +230,7 @@ function twitter_api_admin_render_login( $consumer_key, $consumer_secret ){
  */ 
 function twitter_api_admin_render_page(){
     if ( ! current_user_can('manage_options') ){
-        twitter_api_admin_render_header( __("You don't have permission to manage Twitter API settings", 'genesis-latest-tweets' ),'error');
+        twitter_api_admin_render_header( __("You don't have permission to manage Twitter API settings", GENESIS_TWITTER_DOMAIN ),'error');
         twitter_api_admin_render_footer();
         return;
     }
@@ -249,7 +249,7 @@ function twitter_api_admin_render_page(){
         // check whether we have any OAuth params
         extract( $conf );
         if( ! $consumer_key || ! $consumer_secret ){
-            throw new Exception( __('Twitter application not fully configured', 'genesis-latest-tweets' ) );
+            throw new Exception( __('Twitter application not fully configured', GENESIS_TWITTER_DOMAIN ) );
         }
 
         // else exchange access token if callback // request secret saved as option
@@ -267,14 +267,14 @@ function twitter_api_admin_render_page(){
 
         // else administrator needs to connect / authenticate with Twitter.
         if( ! $access_key || ! $access_secret ){
-            twitter_api_admin_render_header( __('Plugin not yet authenticated with Twitter', 'genesis-latest-tweets' ), 'error' );
+            twitter_api_admin_render_header( __('Plugin not yet authenticated with Twitter', GENESIS_TWITTER_DOMAIN ), 'error' );
             twitter_api_admin_render_login( $consumer_key, $consumer_secret );
         }
 
         // else we have auth - verify that tokens are all still valid
         else {
             $me = twitter_api_get('account/verify_credentials');
-            twitter_api_admin_render_header( sprintf( __('Authenticated as @%s', 'genesis-latest-tweets' ), $me['screen_name'] ), 'updated' );
+            twitter_api_admin_render_header( sprintf( __('Authenticated as @%s', GENESIS_TWITTER_DOMAIN ), $me['screen_name'] ), 'updated' );
         }
 
     }

@@ -4,7 +4,7 @@ Plugin Name: Genesis Latest Tweets Widget
 Plugin URI: http://wpsmith.net/
 Description: Genesis Latest Tweets Widget.
 Version: 1.1.0
-Author: wpsmith
+Author: wpsmith,Nick_theGeek
 Author URI: http://wpsmith.net/
 Author Email: t@wpsmith.net 
 License:
@@ -30,12 +30,13 @@ License:
 * @const  GENESIS_TWITTER_DIR  Plugin Directory.
 */
 define( 'GENESIS_TWITTER_DIR', dirname( __FILE__ ) );
+define( 'GENESIS_TWITTER_DOMAIN', 'genesis-latest-tweets' );
 
 
 add_action( 'init', 'genesis_twitter_widget_init' );
 function genesis_twitter_widget_init() {
 
-	load_plugin_textdomain( 'genesis-latest-tweets', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	load_plugin_textdomain( GENESIS_TWITTER_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	
 }
 

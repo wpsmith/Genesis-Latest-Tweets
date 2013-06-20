@@ -227,7 +227,7 @@ class TwitterApiClient {
     public function call( $path, array $_args, $http_method ){
         // all calls must be authenticated in API 1.1
         if( ! $this->has_auth() ){
-            throw new TwitterApiException( __('Twitter client not authenticated', 'genesis-latest-tweets' ), 0, 401 );
+            throw new TwitterApiException( __('Twitter client not authenticated', GENESIS_TWITTER_DOMAIN ), 0, 401 );
         }
         // transform some arguments and ensure strings
         // no further validation is performed
@@ -243,7 +243,7 @@ class TwitterApiClient {
                  $args[$key] = 'false';
             }
             else if( ! is_scalar($val) ){
-                throw new TwitterApiException( __('Invalid Twitter parameter', 'genesis-latest-tweets' ).' ('.gettype($val).') '.$key.' in '.$path, -1 );
+                throw new TwitterApiException( __('Invalid Twitter parameter', GENESIS_TWITTER_DOMAIN ).' ('.gettype($val).') '.$key.' in '.$path, -1 );
             }
             else {
                 $args[$key] = (string) $val;
@@ -346,7 +346,7 @@ class TwitterApiClient {
         }
         parse_str( $body, $params );
         if( ! is_array($params) || ! isset($params['oauth_token']) || ! isset($params['oauth_token_secret']) ){
-            throw new TwitterApiException( __('Malformed response from Twitter', 'genesis-latest-tweets' ), -1, $stat );
+            throw new TwitterApiException( __('Malformed response from Twitter', GENESIS_TWITTER_DOMAIN ), -1, $stat );
         }
         return $params;   
     }
@@ -365,7 +365,7 @@ class TwitterApiClient {
             }
         }
         if( empty($http['response']) ){
-            throw new TwitterApiException( __('Wordpress HTTP request failure', 'genesis-latest-tweets' ), -1 );
+            throw new TwitterApiException( __('Wordpress HTTP request failure', GENESIS_TWITTER_DOMAIN ), -1 );
         }
         return $http;
     }
@@ -400,7 +400,7 @@ class TwitterOAuthToken {
 
     public function __construct( $key, $secret = '' ){
         if( ! $key ){
-           throw new Exception( __('Invalid OAuth token', 'genesis-latest-tweets' ).' - '.__('Key required even if secret is empty', 'genesis-latest-tweets' ) );
+           throw new Exception( __('Invalid OAuth token', GENESIS_TWITTER_DOMAIN ).' - '.__('Key required even if secret is empty', GENESIS_TWITTER_DOMAIN ) );
         }
         $this->key = $key;
         $this->secret = $secret;
@@ -505,10 +505,10 @@ class TwitterOAuthParams {
  */
 function _twitter_api_http_status_text( $s ){
     static $codes = array (
-        429 => __( 'Twitter API rate limit exceeded', 'genesis-latest-tweets' ),
-        500 => __( 'Twitter server error', 'genesis-latest-tweets' ),
-        502 => __( 'Twitter is not responding', 'genesis-latest-tweets' ),
-        503 => __( 'Twitter is too busy to respond' 'genesis-latest-tweets' ),
+        429 => __( 'Twitter API rate limit exceeded', GENESIS_TWITTER_DOMAIN ),
+        500 => __( 'Twitter server error', GENESIS_TWITTER_DOMAIN ),
+        502 => __( 'Twitter is not responding', GENESIS_TWITTER_DOMAIN ),
+        503 => __( 'Twitter is too busy to respond' GENESIS_TWITTER_DOMAIN ),
     );
     if( isset($codes[$s]) ){
         return __( $codes[$s] );
@@ -519,7 +519,7 @@ function _twitter_api_http_status_text( $s ){
         return __( $text );
     }
     // unknown status    
-    return sprintf( __('Status %u from Twitter', 'genesis-latest-tweets' ), $s );
+    return sprintf( __('Status %u from Twitter', GENESIS_TWITTER_DOMAIN ), $s );
 }
 
 
