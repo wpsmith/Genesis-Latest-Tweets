@@ -30,7 +30,9 @@ License:
 * @const  GENESIS_TWITTER_DIR  Plugin Directory.
 */
 define( 'GENESIS_TWITTER_DIR', dirname( __FILE__ ) );
-define( 'GENESIS_TWITTER_DOMAIN', 'genesis-latest-tweets' );
+define( 'GENESIS_TWITTER_INC', GENESIS_TWITTER_DIR . '/includes' );
+define( 'GENESIS_TWITTER_API', GENESIS_TWITTER_INC . '/api' );
+define( 'GENESIS_TWITTER_DOMAIN', GENESIS_TWITTER_DOMAIN );
 
 
 add_action( 'init', 'genesis_twitter_widget_init' );
@@ -48,21 +50,23 @@ add_action( 'widgets_init', 'genesis_twitter_load_widget', 25 );
  * but this needs to load on widgets_init
  */
 function genesis_twitter_load_widget() {
+
 	// Remove Genesis Twiter Widget
 	if( function_exists( 'genesis' ) ){
 	
 		unregister_widget( 'Genesis_Latest_Tweets_Widget' );
 	
-		require_once( GENESIS_TWITTER_DIR . '/includes/api/twitter-api.php' );
-		require_once( GENESIS_TWITTER_DIR . '/includes/api/twitter-api-core.php' );
-		require_once( GENESIS_TWITTER_DIR . '/includes/functions.php' );
-		require_once( GENESIS_TWITTER_DIR . '/includes/xhtml-widget.php' );
+		require_once( GENESIS_TWITTER_API . '/twitter-api.php' );
+		require_once( GENESIS_TWITTER_API . 'twitter-api-core.php' );
+		require_once( GENESIS_TWITTER_INC . '/functions.php' );
+		require_once( GENESIS_TWITTER_INC . '/xhtml-widget.php' );
 		
 		register_widget( 'Genesis_Official_Twitter_Widget' );
 		
 		// Include application settings panel if in admin area
 		if( is_admin() )
-			require_once( GENESIS_TWITTER_DIR . '/includes/api/twitter-api-admin.php' );
+			require_once( GENESIS_TWITTER_API . '/twitter-api-admin.php' );
 
 	}
+	
 }
