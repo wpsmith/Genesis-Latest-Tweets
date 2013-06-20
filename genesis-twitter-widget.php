@@ -4,7 +4,7 @@ Plugin Name: Genesis Latest Tweets Widget
 Plugin URI: http://wpsmith.net/
 Description: Genesis Latest Tweets Widget.
 Version: 1.1.0
-Author: wpsmith
+Author: wpsmith, Nick_theGeek
 Author URI: http://wpsmith.net/
 Author Email: t@wpsmith.net 
 License:
@@ -29,13 +29,19 @@ License:
 * Genesis Twitter Plugin Directory.
 * @const  GENESIS_TWITTER_DIR  Plugin Directory.
 */
-define( 'GENESIS_TWITTER_DIR', dirname( __FILE__ ) );
+define( 'GENESIS_TWITTER_DIR', plugin_dir_path( __FILE__ ) );
+define( 'GENESIS_TWITTER_INC', GENESIS_TWITTER_DIR . 'includes/' );
+define( 'GENESIS_TWITTER_OAUTH', GENESIS_TWITTER_INC . 'twitteroauth/' );
+define( 'GENESIS_TWITTER_DOMAIN', 'genesis-latest-tweets' );
+define( 'CONSUMER_KEY', '44IEbHlfFia6E4zTxvkw' );
+define( 'CONSUMER_SECRET', 'yWH8mADafiQQGMEuTESjC2kRAHIMlSuK8or8bwt4' );
+define( 'OAUTH_CALLBACK', plugins_url( 'includes/twitteroauth/callback.php', __FILE__ ) );
 
 
 add_action( 'init', 'genesis_twitter_widget_init' );
 function genesis_twitter_widget_init() {
 
-	load_plugin_textdomain( 'genesis-latest-tweets', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	load_plugin_textdomain( GENESIS_TWITTER_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	
 }
 
@@ -47,21 +53,26 @@ add_action( 'widgets_init', 'genesis_twitter_load_widget', 25 );
  * but this needs to load on widgets_init
  */
 function genesis_twitter_load_widget() {
+
 	// Remove Genesis Twiter Widget
-	if( function_exists( 'genesis' ) ){
+	if( function_exists( 'genesis' ) ) {
 	
 		unregister_widget( 'Genesis_Latest_Tweets_Widget' );
-	
-		require_once( GENESIS_TWITTER_DIR . '/includes/api/twitter-api.php' );
-		require_once( GENESIS_TWITTER_DIR . '/includes/api/twitter-api-core.php' );
-		require_once( GENESIS_TWITTER_DIR . '/includes/functions.php' );
-		require_once( GENESIS_TWITTER_DIR . '/includes/xhtml-widget.php' );
+		require_once( GENESIS_TWITTER_OAUTH . 'twitteroauth/twitteroauth.php' ); 
 		
-		register_widget( 'Genesis_Official_Twitter_Widget' );
+		//register_widget( 'Genesis_Official_Twitter_Widget' );
 		
 		// Include application settings panel if in admin area
 		if( is_admin() )
-			require_once( GENESIS_TWITTER_DIR . '/includes/api/twitter-api-admin.php' );
+			require_once( GENESIS_TWITTER_DIR . '/includes/admin.php' );
 
 	}
+	
+}
+
+function pr( $args, $t = '' ) {
+	printf( '<strong>%s</strong>', $t );
+	echo '<pre>';
+	print_r( $args );
+	echo '</pre>';
 }
