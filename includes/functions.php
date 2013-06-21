@@ -86,10 +86,13 @@ function gltw_tweet_relative_date( $strdate ){
 }
 /**/
 
-function gltw_errors() {
+function gltw_errors( $class = 'error', $e = true ) {
 	global $gltw_errors;
-	if ( !empty( $gltw_errors ) )
-		printf( '<%1$s class="error">%2$s</%1$s>', 'div', sprintf( '<%1$s>%2$s</%1$s>', 'p', $gltw_errors ) );
+
+	if ( !empty( $gltw_errors ) && $e )
+		printf( '<%1$s class="%2$s">%3$s</%1$s>', 'div', $class, sprintf( '<%1$s>%2$s</%1$s>', 'p', $gltw_errors ) );
+	elseif ( !empty( $gltw_errors ) && !$e )
+		sprintf( '<%1$s class="%2$s">%3$s</%1$s>', 'div', $class, sprintf( '<%1$s>%2$s</%1$s>', 'p', $gltw_errors ) );
 }
 
 function gltw_pr() {

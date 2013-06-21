@@ -526,7 +526,7 @@ class TwitterApiException extends Exception {
 		$gltw_errors .= 'Message: ' . $mess . "\n";
 		
 		if ( did_action( 'admin_notices' ) )
-			printf( '<%1$s class="error">%2$s</%1$s>', 'div', sprintf( '<%1$s>%2$s</%1$s>', 'p', $gltw_errors ) );
+			printf( '<%1$s class="gltw-error">%2$s</%1$s>', 'div', sprintf( '<%1$s>%2$s</%1$s>', 'p', $gltw_errors ) );
 			
         //throw new $eclass( $mess, $code, $status );
     }

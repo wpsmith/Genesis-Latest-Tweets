@@ -137,7 +137,8 @@ class GLTW_Widget_Admin_Settings extends Genesis_Admin_Boxes {
  	 */
 	function metaboxes() {
 
-		add_meta_box( 'genesis-theme-settings-version', __( 'Information', GLTW_DOMAIN ), array( $this, 'info_box' ), $this->pagehook, 'main', 'high' );
+		add_meta_box( 'gltw-settings', __( 'Twitter API Settings', GLTW_DOMAIN ), array( $this, 'settings_box' ), $this->pagehook, 'main', 'high' );
+		add_meta_box( 'gltw-info', __( 'Twitter API Information', GLTW_DOMAIN ), array( $this, 'info_box' ), $this->pagehook, 'main', 'high' );
 
 
 	}
@@ -147,7 +148,7 @@ class GLTW_Widget_Admin_Settings extends Genesis_Admin_Boxes {
 	}
 
 	/**
-	 * Callback for Theme Settings Information meta box.
+	 * Callback for Twitter API Information meta box.
 	 *
 	 * If genesis-auto-updates is not supported, some of the fields will not display.
 	 *
@@ -165,13 +166,12 @@ class GLTW_Widget_Admin_Settings extends Genesis_Admin_Boxes {
 		extract( gltw_api_config() );
 		
 		if ( !empty( $gltw_errors ) ) {
-			'output errors';
-			gltw_errors();
+			echo gltw_errors( 'gltw-error', false );
 		}
 		if ( !empty( $consumer_key ) && !empty( $consumer_secret ) && !empty( $access_key ) && !empty( $access_secret ) ) {
 			$rate = $GLTW_API->api_get('application/rate_limit_status', array( 'resources' => 'application', ) );
 			if ( !empty( $gltw_errors ) || isset( $rate['errors'] ) ) {
-				gltw_errors();
+				echo gltw_errors( 'gltw-error', false );
 			}
 			else {
 				$rate_limit_status = $rate['resources']['application']['/application/rate_limit_status'];
@@ -189,7 +189,27 @@ class GLTW_Widget_Admin_Settings extends Genesis_Admin_Boxes {
 				);
 			}
 		}
-
+		else {
+			
+		}
+	}
+	
+	/**
+	 * Callback for Twitter Settings meta box.
+	 *
+	 * If genesis-auto-updates is not supported, some of the fields will not display.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @uses PARENT_THEME_RELEASE_DATE         Date of current release of Genesis Framework.
+	 * @uses \Genesis_Admin::get_field_id()    Construct field ID.
+	 * @uses \Genesis_Admin::get_field_name()  Construct field name.
+	 * @uses \Genesis_Admin::get_field_value() Retrieve value of key under $this->settings_field.
+	 *
+	 * @see \Genesis_Admin_Settings::metaboxes() Register meta boxes on the Theme Settings page.
+	 */
+	function settings_box() {
+		extract( gltw_api_config() );
 		?>
 		<p>
 			<label for="twitter-api--consumer-key"><?php _e( 'OAuth Consumer Key:', GLTW_DOMAIN ); ?></label><br />
@@ -237,8 +257,6 @@ class GLTW_Widget_Admin_Settings extends Genesis_Admin_Boxes {
 		echo '<p>&nbsp;</p>';
 	}
 	
-	
-	
 	/**
 	 * Calculate base URL for admin OAuth callbacks
 	 * @return string
@@ -263,9 +281,6 @@ class GLTW_Widget_Admin_Settings extends Genesis_Admin_Boxes {
 		$params = $Client->oauth_exchange( TWITTER_OAUTH_REQUEST_TOKEN_URL, compact('oauth_callback') );
 		return new TwitterOAuthToken( $params['oauth_token'], $params['oauth_token_secret'] );
 	}
-
-
-
 
 	/**
 	 * Exchange request token for an access token after authentication/authorization by user
