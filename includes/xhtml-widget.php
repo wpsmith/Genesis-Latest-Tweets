@@ -14,7 +14,7 @@
  * @category Genesis
  * @package Widgets
  *
- * @since 1.0.0
+ * @since 1.1.0
  */
 class Genesis_Official_Twitter_Widget extends WP_Widget {
 
@@ -44,7 +44,7 @@ class Genesis_Official_Twitter_Widget extends WP_Widget {
 
 		$widget_ops = array(
 			'classname'   => 'latest-tweets',
-			'description' => __( 'Display a list of your latest tweets.', GENESIS_TWITTER_DOMAIN ),
+			'description' => __( 'Display a list of your latest tweets.', GLTW_DOMAIN ),
 		);
 
 		$control_ops = array(
@@ -53,7 +53,7 @@ class Genesis_Official_Twitter_Widget extends WP_Widget {
 			'height'  => 250,
 		);
 
-		$this->WP_Widget( 'latest-tweets', __( 'Genesis Twitter Widget', GENESIS_TWITTER_DOMAIN ), $widget_ops, $control_ops );
+		$this->WP_Widget( 'latest-tweets', __( 'Genesis Twitter Widget', GLTW_DOMAIN ), $widget_ops, $control_ops );
 
 	}
 
@@ -66,7 +66,9 @@ class Genesis_Official_Twitter_Widget extends WP_Widget {
 	 * @param array $instance The settings for the particular instance of the widget
 	 */
 	function widget( $args, $instance ) {
-
+		extract( gltw_api_config() );
+		if ( empty( $consumer_key ) && empty( $consumer_secret ) && empty( $access_key ) && empty( $access_secret ) ) return;
+		
 		extract( $args );
 
 		/** Merge with defaults */
@@ -80,17 +82,16 @@ class Genesis_Official_Twitter_Widget extends WP_Widget {
 		echo '<ul>' . "\n";
 
 		$key = $instance['twitter_id'] . '-' . $instance['twitter_num'] . '-' . $instance['twitter_duration'];
-
 		$tweets = get_transient( $key );
 		
-		$screen_name     = $instance['twitter_id'];
+		$screen_name = $instance['twitter_id'];
 
 		if ( ! $tweets ) {
 			
-			global $Genesis_Twitter_API;
+			global $GLTW_API;
 		
 			// We could cache the rendered HTML right here, but this keeps caching abstracted in library
-			$Genesis_Twitter_API->api_enable_cache( absint( $instance['twitter_duration'] ) * 60 );
+			$GLTW_API->api_enable_cache( absint( $instance['twitter_duration'] ) * 60 );
 			
 			// Build API params for "statuses/user_timeline" // https://dev.twitter.com/docs/api/1.1/get/statuses/user_timeline
 			$screen_name     = $instance['twitter_id'];
@@ -99,8 +100,7 @@ class Genesis_Official_Twitter_Widget extends WP_Widget {
 			$exclude_replies = ! empty($instance['twitter_hide_replies']);
 			$count           = isset( $instance['twitter_hide_replies'] ) ? (int) $instance['twitter_num'] * 3 : (int) $instance['twitter_num'];
 			$params          = compact('count','exclude_replies','include_rts','trim_user','screen_name');
-			
-			$tweets = $Genesis_Twitter_API->api_get('statuses/user_timeline', $params );
+			$tweets = $GLTW_API->api_get('statuses/user_timeline', $params );
 			
 			if( isset($tweets[$count]) )
 				$tweets = array_slice( $tweets, 0, $count );
@@ -117,41 +117,43 @@ class Genesis_Official_Twitter_Widget extends WP_Widget {
 		
 		$tweet_count = 0;
 		
-		//print_r( $tweets ); 
-		
-		foreach( (array) $tweets as $tweet ){
-					if ( $tweet_count >= (int)$instance['twitter_num'] )
-						break;
-			extract( $tweet );
-			
-            $link = esc_html( 'http://twitter.com/'.$screen_name.'/status/'.$id_str);
-            
-            // render nice datetime, unless theme overrides with filter
-            $date = apply_filters( 'latest_tweets_render_date', $created_at );
-            if( $date === $created_at ){
-                $date = esc_html( gtw_tweet_relative_date($created_at) );
-                $date = '<span style="font-size: 85%;">'.$date.'</span>';
-            }
-            
-            // render and linkify tweet, unless theme overrides with filter
-            $html = apply_filters('latest_tweets_render_text', $text );
-            if( $html === $text ){
-                $html = gtw_tweet_linkify( $text );
-            }
-            
-            // piece together the whole tweet, allowing overide
-            $final = apply_filters('latest_tweets_render_tweet', $html, $date, $link );
-            if( $final === $html ){
-                $final = '<li><span class="tweet-text">'.$html.'</span>'.
-                         ' <span class="tweet-details"><a href="'.$link.'" target="_blank" rel="nofollow">'.$date.'</a></span></li>';
-            }
-            
-            echo $final;
-            
-            $tweet_count++;
+		if ( ! empty( $tweets ) ) {
+			foreach( (array) $tweets as $tweet ){
+						if ( $tweet_count >= (int)$instance['twitter_num'] )
+							break;
+				extract( $tweet );
+				
+				$link = esc_html( 'http://twitter.com/'.$screen_name.'/status/'.$id_str);
+				
+				// render nice datetime, unless theme overrides with filter
+				$date = apply_filters( 'glt_render_date', $created_at );
+				if( $date === $created_at ){
+					$date = esc_html( gltw_tweet_relative_date($created_at) );
+					$date = '<span style="font-size: 85%;">'.$date.'</span>';
+				}
+				
+				// render and linkify tweet, unless theme overrides with filter
+				$html = apply_filters('glt_render_text', $text );
+				if( $html === $text ){
+					$html = gltw_tweet_linkify( $text );
+				}
+				
+				// piece together the whole tweet, allowing overide
+				$final = apply_filters('glt_render_tweet', $html, $date, $link );
+				if( $final === $html ){
+					$final = '<li><span class="tweet-text">'.$html.'</span>'.
+							 ' <span class="tweet-details"><a href="'.$link.'" target="_blank" rel="nofollow">'.$date.'</a></span></li>';
+				}
+				
+				echo $final;
+				
+				$tweet_count++;
+			}
+		} else {
+			echo apply_filters( 'glt_no_tweets', __( 'No tweets found.', GLTW_DOMAIN ) );
 		}
-			
-			echo $follow_link;
+		
+		echo $follow_link;
 
 		echo '</ul>' . "\n";
 
@@ -189,52 +191,64 @@ class Genesis_Official_Twitter_Widget extends WP_Widget {
 	 * @param array $instance Current settings
 	 */
 	function form( $instance ) {
+		extract( gltw_api_config() );
 
+		if ( empty( $consumer_key ) && empty( $consumer_secret ) && empty( $access_key ) && empty( $access_secret ) ) {
+			printf(
+				'<%1$s>%2$s<a href="%3$s">%4$s</a>.</%1$s>',
+				'p',
+				__( 'Please set the ', GLTW_DOMAIN ),
+				admin_url( 'admin.php?page=genesis-twitter-widget-settings' ),
+				__( 'Genesis Twitter Widget Settings', GLTW_DOMAIN )
+			);
+			return;
+		}
+		
 		/** Merge with defaults */
 		$instance = wp_parse_args( (array) $instance, $this->defaults );
-
+		
 		?>
 		<p>
-			<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title', GENESIS_TWITTER_DOMAIN ); ?>:</label>
+			<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title', GLTW_DOMAIN ); ?>:</label>
 			<input type="text" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" value="<?php echo esc_attr( $instance['title'] ); ?>" class="widefat" />
 		</p>
 
 		<p>
-			<label for="<?php echo $this->get_field_id( 'twitter_id' ); ?>"><?php _e( 'Twitter Username', GENESIS_TWITTER_DOMAIN ); ?>:</label>
+			<label for="<?php echo $this->get_field_id( 'twitter_id' ); ?>"><?php _e( 'Twitter Username', GLTW_DOMAIN ); ?>:</label>
 			<input type="text" id="<?php echo $this->get_field_id( 'twitter_id' ); ?>" name="<?php echo $this->get_field_name( 'twitter_id' ); ?>" value="<?php echo esc_attr( $instance['twitter_id'] ); ?>" class="widefat" />
 		</p>
 
 		<p>
-			<label for="<?php echo $this->get_field_id( 'twitter_num' ); ?>"><?php _e( 'Number of Tweets to Show', GENESIS_TWITTER_DOMAIN ); ?>:</label>
+			<label for="<?php echo $this->get_field_id( 'twitter_num' ); ?>"><?php _e( 'Number of Tweets to Show', GLTW_DOMAIN ); ?>:</label>
 			<input type="text" id="<?php echo $this->get_field_id( 'twitter_num' ); ?>" name="<?php echo $this->get_field_name( 'twitter_num' ); ?>" value="<?php echo esc_attr( $instance['twitter_num'] ); ?>" size="3" />
 		</p>
 
 		<p>
 			<input id="<?php echo $this->get_field_id( 'twitter_hide_replies' ); ?>" type="checkbox" name="<?php echo $this->get_field_name( 'twitter_hide_replies' ); ?>" value="1" <?php checked( $instance['twitter_hide_replies'] ); ?>/>
-			<label for="<?php echo $this->get_field_id( 'twitter_hide_replies' ); ?>"><?php _e( 'Hide @ Replies', GENESIS_TWITTER_DOMAIN ); ?></label>
+			<label for="<?php echo $this->get_field_id( 'twitter_hide_replies' ); ?>"><?php _e( 'Hide @ Replies', GLTW_DOMAIN ); ?></label>
 		</p>
 
 		<p>
-			<label for="<?php echo $this->get_field_id( 'twitter_duration' ); ?>"><?php _e( 'Load new Tweets every', GENESIS_TWITTER_DOMAIN ); ?></label>
+			<label for="<?php echo $this->get_field_id( 'twitter_duration' ); ?>"><?php _e( 'Load new Tweets every', GLTW_DOMAIN ); ?></label>
 			<select name="<?php echo $this->get_field_name( 'twitter_duration' ); ?>" id="<?php echo $this->get_field_id( 'twitter_duration' ); ?>">
-				<option value="5" <?php selected( 5, $instance['twitter_duration'] ); ?>><?php _e( '5 Min.' , GENESIS_TWITTER_DOMAIN ); ?></option>
-				<option value="15" <?php selected( 15, $instance['twitter_duration'] ); ?>><?php _e( '15 Minutes' , GENESIS_TWITTER_DOMAIN ); ?></option>
-				<option value="30" <?php selected( 30, $instance['twitter_duration'] ); ?>><?php _e( '30 Minutes' , GENESIS_TWITTER_DOMAIN ); ?></option>
-				<option value="60" <?php selected( 60, $instance['twitter_duration'] ); ?>><?php _e( '1 Hour' , GENESIS_TWITTER_DOMAIN ); ?></option>
-				<option value="120" <?php selected( 120, $instance['twitter_duration'] ); ?>><?php _e( '2 Hours' , GENESIS_TWITTER_DOMAIN ); ?></option>
-				<option value="240" <?php selected( 240, $instance['twitter_duration'] ); ?>><?php _e( '4 Hours' , GENESIS_TWITTER_DOMAIN ); ?></option>
-				<option value="720" <?php selected( 720, $instance['twitter_duration'] ); ?>><?php _e( '12 Hours' , GENESIS_TWITTER_DOMAIN ); ?></option>
-				<option value="1440" <?php selected( 1440, $instance['twitter_duration'] ); ?>><?php _e( '24 Hours' , GENESIS_TWITTER_DOMAIN ); ?></option>
+				<option value="5" <?php selected( 5, $instance['twitter_duration'] ); ?>><?php _e( '5 Min.' , GLTW_DOMAIN ); ?></option>
+				<option value="15" <?php selected( 15, $instance['twitter_duration'] ); ?>><?php _e( '15 Minutes' , GLTW_DOMAIN ); ?></option>
+				<option value="30" <?php selected( 30, $instance['twitter_duration'] ); ?>><?php _e( '30 Minutes' , GLTW_DOMAIN ); ?></option>
+				<option value="60" <?php selected( 60, $instance['twitter_duration'] ); ?>><?php _e( '1 Hour' , GLTW_DOMAIN ); ?></option>
+				<option value="120" <?php selected( 120, $instance['twitter_duration'] ); ?>><?php _e( '2 Hours' , GLTW_DOMAIN ); ?></option>
+				<option value="240" <?php selected( 240, $instance['twitter_duration'] ); ?>><?php _e( '4 Hours' , GLTW_DOMAIN ); ?></option>
+				<option value="720" <?php selected( 720, $instance['twitter_duration'] ); ?>><?php _e( '12 Hours' , GLTW_DOMAIN ); ?></option>
+				<option value="1440" <?php selected( 1440, $instance['twitter_duration'] ); ?>><?php _e( '24 Hours' , GLTW_DOMAIN ); ?></option>
 			</select>
 		</p>
 
 		<p>
 			<input id="<?php echo $this->get_field_id( 'follow_link_show' ); ?>" type="checkbox" name="<?php echo $this->get_field_name( 'follow_link_show' ); ?>" value="1" <?php checked( $instance['follow_link_show'] ); ?>/>
-			<label for="<?php echo $this->get_field_id( 'follow_link_show' ); ?>"><?php _e( 'Include link to twitter page?', GENESIS_TWITTER_DOMAIN ); ?></label>
+			<label for="<?php echo $this->get_field_id( 'follow_link_show' ); ?>"><?php _e( 'Include link to twitter page?', GLTW_DOMAIN ); ?></label>
 		</p>
 
 		<p>
-			<label for="<?php echo $this->get_field_id( 'follow_link_text' ); ?>"><?php _e( 'Link Text (required)', GENESIS_TWITTER_DOMAIN ); ?>:</label>
+			<label for="<?php echo $this->get_field_id( 'follow_link_text' ); ?>"><?php _e( 'Link Text (required)', GLTW_DOMAIN ); ?>:</label>
 			<input type="text" id="<?php echo $this->get_field_id( 'follow_link_text' ); ?>" name="<?php echo $this->get_field_name( 'follow_link_text' ); ?>" value="<?php echo esc_attr( $instance['follow_link_text'] ); ?>" class="widefat" />
 		</p>
 		<?php

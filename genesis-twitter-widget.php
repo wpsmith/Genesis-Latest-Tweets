@@ -27,45 +27,50 @@ License:
 
 /**
 * Genesis Twitter Plugin Directory.
-* @const  GENESIS_TWITTER_DIR  Plugin Directory.
+* @const  GLTW_DIR  Plugin Directory.
 */
-define( 'GENESIS_TWITTER_DIR', dirname( __FILE__ ) );
-define( 'GENESIS_TWITTER_INC', GENESIS_TWITTER_DIR . '/includes' );
-define( 'GENESIS_TWITTER_API', GENESIS_TWITTER_INC . '/api' );
-define( 'GENESIS_TWITTER_DOMAIN', GENESIS_TWITTER_DOMAIN );
+define( 'GLTW_DIR', dirname( __FILE__ ) );
+define( 'GLTW_INC', GLTW_DIR . '/includes' );
+define( 'GLTW_API', GLTW_INC . '/api' );
+define( 'GLTW_DOMAIN', GLTW_DOMAIN );
 
 
-add_action( 'init', 'genesis_twitter_widget_init' );
-function genesis_twitter_widget_init() {
+add_action( 'init', 'gltw_widget_init' );
+function gltw_widget_init() {
 
-	load_plugin_textdomain( GENESIS_TWITTER_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	load_plugin_textdomain( GLTW_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	
 }
 
-add_action( 'widgets_init', 'genesis_twitter_load_widget', 25 );	
+add_action( 'widgets_init', 'gltw_load_widget', 25 );	
 /**
  * Load the Twitter widget and required files
  *
  * Normally I would load this on genesis_init skip the function_exists( 'genesis' ) 
  * but this needs to load on widgets_init
  */
-function genesis_twitter_load_widget() {
+function gltw_load_widget() {
 
 	// Remove Genesis Twiter Widget
 	if( function_exists( 'genesis' ) ){
 	
 		unregister_widget( 'Genesis_Latest_Tweets_Widget' );
-	
-		require_once( GENESIS_TWITTER_API . '/twitter-api.php' );
-		require_once( GENESIS_TWITTER_API . 'twitter-api-core.php' );
-		require_once( GENESIS_TWITTER_INC . '/functions.php' );
-		require_once( GENESIS_TWITTER_INC . '/xhtml-widget.php' );
+
+		require_once( GLTW_INC . '/functions.php' );
+gltw_log('inc-functions');
+gltw_log('twitter-api-core');
+		require_once( GLTW_API . '/twitter-api-core.php' );
+gltw_log('twitter-api');
+		require_once( GLTW_API . '/twitter-api.php' );
+
+gltw_log('inc-widget');
+		require_once( GLTW_INC . '/xhtml-widget.php' );
 		
 		register_widget( 'Genesis_Official_Twitter_Widget' );
 		
 		// Include application settings panel if in admin area
 		if( is_admin() )
-			require_once( GENESIS_TWITTER_API . '/twitter-api-admin.php' );
+			require_once( GLTW_INC . '/admin.php' );
 
 	}
 	

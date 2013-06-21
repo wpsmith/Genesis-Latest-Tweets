@@ -4,27 +4,20 @@
  * Uses built-in wordpress HTTP utilities.
  * @author Tim Whitlock <@timwhitlock>
  */
- 
 
+global $gltw_errors;
 define('TWITTER_API_BASE', 'https://api.twitter.com/1.1' );
-
 define('TWITTER_OAUTH_REQUEST_TOKEN_URL', 'https://twitter.com/oauth/request_token');
-
 define('TWITTER_OAUTH_AUTHORIZE_URL', 'https://twitter.com/oauth/authorize');
-
 define('TWITTER_OAUTH_AUTHENTICATE_URL', 'https://twitter.com/oauth/authenticate');
-
 define('TWITTER_OAUTH_ACCESS_TOKEN_URL', 'https://twitter.com/oauth/access_token');
-
 define('TWITTER_CACHE_APC', function_exists('apc_fetch') );
- 
-
  
 /**
  * Get config options from DB
  * @param array any new options to update
  */
-function genesis_twitter_api_config( array $update = array() ){
+function gltw_api_config( array $update = array() ){
     static $conf;
     if( ! isset($conf) ){
         $conf = array (
@@ -35,27 +28,24 @@ function genesis_twitter_api_config( array $update = array() ){
             'access_secret'   => '',
         );
         foreach( $conf as $key => $val ){
-            $conf[$key] = genesis_get_option($key, 'genesis_twitter_widget_field' ) or
+            $conf[$key] = genesis_get_option( $key, 'gltw_widget_field' ) or
             $conf[$key] = $val;
         }
     }
     foreach( $update as $key => $val ){
         if( isset($conf[$key]) ){
-            _genesis_update_settings( array( $key => $val ), 'genesis_twitter_widget_field' );
+            _genesis_update_settings( array( $key => $val ), 'gltw_widget_field' );
             $conf[$key] = $val;
         }
     }
     return $conf;
 }
 
-
-
-
 /**
  * abstraction of cache fetching, using apc where possible
  * @return mixed 
  */
-function genesis_twitter_api_cache_get( $key ){
+function gltw_api_cache_get( $key ){
     if( TWITTER_CACHE_APC ){
         return apc_fetch( $key );
     }
@@ -65,14 +55,12 @@ function genesis_twitter_api_cache_get( $key ){
     return get_transient( $key );
 } 
 
-
-
 /**
  * abstraction of cache setting, using apc where possible
  * @internal
  * @return void
  */
-function genesis_twitter_api_cache_set( $key, $value, $ttl ){
+function gltw_api_cache_set( $key, $value, $ttl ){
     if( TWITTER_CACHE_APC ){
         apc_store( $key, $value, $ttl );
         return;
@@ -86,9 +74,6 @@ function genesis_twitter_api_cache_set( $key, $value, $ttl ){
     }
     set_transient( $key, $value, $ttl );
 } 
-
-
-
 
 /**
  * Client for the Twitter REST API 1.1
@@ -139,7 +124,7 @@ class TwitterApiClient {
      */    
     public static function create_instance( $default = true ){
         $Client = new TwitterApiClient;
-        extract( genesis_twitter_api_config() );
+        extract( gltw_api_config() );
         if( $default ){
             if( ! $consumer_key || ! $consumer_secret || ! $access_key || ! $access_secret ){
                 trigger_error( __('Twitter application is not fully configured') );
@@ -227,7 +212,7 @@ class TwitterApiClient {
     public function call( $path, array $_args, $http_method ){
         // all calls must be authenticated in API 1.1
         if( ! $this->has_auth() ){
-            throw new TwitterApiException( __('Twitter client not authenticated', GENESIS_TWITTER_DOMAIN ), 0, 401 );
+            throw new TwitterApiException( __('Twitter client not authenticated', GLTW_DOMAIN ), 0, 401 );
         }
         // transform some arguments and ensure strings
         // no further validation is performed
@@ -243,7 +228,7 @@ class TwitterApiClient {
                  $args[$key] = 'false';
             }
             else if( ! is_scalar($val) ){
-                throw new TwitterApiException( __('Invalid Twitter parameter', GENESIS_TWITTER_DOMAIN ).' ('.gettype($val).') '.$key.' in '.$path, -1 );
+                throw new TwitterApiException( __('Invalid Twitter parameter', GLTW_DOMAIN ).' ('.gettype($val).') '.$key.' in '.$path, -1 );
             }
             else {
                 $args[$key] = (string) $val;
@@ -255,7 +240,7 @@ class TwitterApiClient {
            if( preg_match('/^(\d+)-/', $this->AccessToken->key, $reg ) ){
               $cachekey .= '_'.$reg[1];
            }
-           $data = genesis_twitter_api_cache_get( $cachekey );
+           $data = gltw_api_cache_get( $cachekey );
            if( is_array($data) ){
                return $data;
            }
@@ -314,7 +299,7 @@ class TwitterApiClient {
             }
         }
         if( isset($cachekey) ){
-           genesis_twitter_api_cache_set( $cachekey, $data, $this->cache_ttl );
+           gltw_api_cache_set( $cachekey, $data, $this->cache_ttl );
         }
         return $data;
     }
@@ -346,7 +331,7 @@ class TwitterApiClient {
         }
         parse_str( $body, $params );
         if( ! is_array($params) || ! isset($params['oauth_token']) || ! isset($params['oauth_token_secret']) ){
-            throw new TwitterApiException( __('Malformed response from Twitter', GENESIS_TWITTER_DOMAIN ), -1, $stat );
+            throw new TwitterApiException( __('Malformed response from Twitter', GLTW_DOMAIN ), -1, $stat );
         }
         return $params;   
     }
@@ -365,7 +350,7 @@ class TwitterApiClient {
             }
         }
         if( empty($http['response']) ){
-            throw new TwitterApiException( __('Wordpress HTTP request failure', GENESIS_TWITTER_DOMAIN ), -1 );
+            throw new TwitterApiException( __('Wordpress HTTP request failure', GLTW_DOMAIN ), -1 );
         }
         return $http;
     }
@@ -383,12 +368,6 @@ class TwitterApiClient {
 
 }
 
-
-
-
-
-
-
 /**
  * Simple token class that holds key and secret
  * @internal
@@ -400,7 +379,7 @@ class TwitterOAuthToken {
 
     public function __construct( $key, $secret = '' ){
         if( ! $key ){
-           throw new Exception( __('Invalid OAuth token', GENESIS_TWITTER_DOMAIN ).' - '.__('Key required even if secret is empty', GENESIS_TWITTER_DOMAIN ) );
+           throw new Exception( __('Invalid OAuth token', GLTW_DOMAIN ).' - '.__('Key required even if secret is empty', GLTW_DOMAIN ) );
         }
         $this->key = $key;
         $this->secret = $secret;
@@ -411,10 +390,6 @@ class TwitterOAuthToken {
     }
 
 }
-
-
-
-
 
 /**
  * Class for compiling, signing and serializing OAuth parameters
@@ -492,11 +467,6 @@ class TwitterOAuthParams {
 
 }
 
-
-
-
-
-
 /**
  * Overridden HTTP status codes for common Twitter-related problems.
  * Note these do not replace error text from Twitter, they're for complete API failures.
@@ -504,11 +474,12 @@ class TwitterOAuthParams {
  * @return string HTTP status text
  */
 function _twitter_api_http_status_text( $s ){
-    static $codes = array (
-        429 => __( 'Twitter API rate limit exceeded', GENESIS_TWITTER_DOMAIN ),
-        500 => __( 'Twitter server error', GENESIS_TWITTER_DOMAIN ),
-        502 => __( 'Twitter is not responding', GENESIS_TWITTER_DOMAIN ),
-        503 => __( 'Twitter is too busy to respond' GENESIS_TWITTER_DOMAIN ),
+    static $codes = array ();
+	$codes = array(
+        429 => __( 'Twitter API rate limit exceeded', GLTW_DOMAIN ),
+        500 => __( 'Twitter server error', GLTW_DOMAIN ),
+        502 => __( 'Twitter is not responding', GLTW_DOMAIN ),
+        503 => __( 'Twitter is too busy to respond', GLTW_DOMAIN ),
     );
     if( isset($codes[$s]) ){
         return __( $codes[$s] );
@@ -519,12 +490,8 @@ function _twitter_api_http_status_text( $s ){
         return __( $text );
     }
     // unknown status    
-    return sprintf( __('Status %u from Twitter', GENESIS_TWITTER_DOMAIN ), $s );
+    return sprintf( __('Status %u from Twitter', GLTW_DOMAIN ), $s );
 }
-
-
-
-
 
 /**
  * Exception for throwing when Twitter responds with something unpleasant
@@ -536,7 +503,6 @@ class TwitterApiException extends Exception {
      * @var int
      */        
     protected $status = 0;        
-
         
     /**
      * Throw appropriate exception type according to HTTP status code
@@ -550,7 +516,19 @@ class TwitterApiException extends Exception {
             429 => 'TwitterApiRateLimitException',
         );
         $eclass = isset($classes[$status]) ? $classes[$status] : __CLASS__;
-        throw new $eclass( $mess, $code, $status );
+		
+//		set_exception_handler('gltw_exception_handler');
+		
+		
+		$gltw_errors = '';
+		$gltw_errors .= 'Uncaught exception ' . $code . ': ' . "\n";
+		$gltw_errors .= 'Status: ' . $status . "\n";
+		$gltw_errors .= 'Message: ' . $mess . "\n";
+		
+		if ( did_action( 'admin_notices' ) )
+			printf( '<%1$s class="error">%2$s</%1$s>', 'div', sprintf( '<%1$s>%2$s</%1$s>', 'p', $gltw_errors ) );
+			
+        //throw new $eclass( $mess, $code, $status );
     }
         
         
@@ -565,6 +543,7 @@ class TwitterApiException extends Exception {
         if( ! $message ){
             $message = _twitter_api_http_status_text($this->status);
         }
+		
         parent::__construct( $message, $code );
     }
     
@@ -579,17 +558,19 @@ class TwitterApiException extends Exception {
     
 }
 
-
 /** 404 */
 class TwitterApiNotFoundException extends TwitterApiException {
     
 }
-
 
 /** 429 */
 class TwitterApiRateLimitException extends TwitterApiException {
     
 }
 
-
-
+function gltw_exception_handler( $exception ) {
+gltw_pr( $exception );
+	global $error;
+	if ( empty( $error ) || is_null( $error ) ) $error = '';
+	$error .= 'Uncaught exception: ' . $exception->getMessage() . '\n';
+}
