@@ -136,9 +136,14 @@ class GLTW_Widget_Admin_Settings extends Genesis_Admin_Boxes {
  	 *
  	 */
 	function metaboxes() {
-
+		global $GLTW_API, $gltw_errors;
+		extract( gltw_api_config() );
 		add_meta_box( 'gltw-settings', __( 'Twitter API Settings', GLTW_DOMAIN ), array( $this, 'settings_box' ), $this->pagehook, 'main', 'high' );
 		add_meta_box( 'gltw-info', __( 'Twitter API Information', GLTW_DOMAIN ), array( $this, 'info_box' ), $this->pagehook, 'main', 'high' );
+		
+		$rate = $GLTW_API->api_get('application/rate_limit_status', array( 'resources' => 'application', ) );
+		if ( empty( $consumer_key ) || empty( $consumer_secret ) || empty( $access_key ) || empty( $access_secret ) || ( ! empty( $gltw_errors ) || isset( $rate['errors'] ) ) )
+			add_meta_box( 'gltw-help', __( 'Help Setup', GLTW_DOMAIN ), array( $this, 'help_box' ), $this->pagehook, 'main', 'high' );
 
 
 	}
@@ -176,7 +181,7 @@ class GLTW_Widget_Admin_Settings extends Genesis_Admin_Boxes {
 			else {
 				$rate_limit_status = $rate['resources']['application']['/application/rate_limit_status'];
 				
-				printf( '<%1$s>%2$s</%1$s>', 'h4', 'Rate Limit Status' );
+				printf( '<%1$s>%2$s</%1$s>', 'h4', __( 'Rate Limit Status', GLTW_DOMAIN ) );
 				printf(
 					'<ul><%1$s>%2$s</%1$s><%1$s>%3$s</%1$s></ul>',
 					'li',
@@ -192,6 +197,27 @@ class GLTW_Widget_Admin_Settings extends Genesis_Admin_Boxes {
 		else {
 			
 		}
+	}
+	
+	function help_box() {
+		echo '<ol>';
+			printf(
+				'<%1$s>%2$s<a href="https://dev.twitter.com/apps" target="_blank">%3$s</a><ul>%3$s</ul></%1$s>', 
+				'li', 
+				__( 'Create a Twitter App from your Developer\'s Dashboard', GLTW_DOMAIN ), 
+				__( 'your Twitter dashboard', GLTW_DOMAIN ),
+				sprintf( '<%1$s>%2$s</%1$s>', 'li', __( 'Callback URL optional.', GLTW_DOMAIN ) )
+			);
+			printf( '<%1$s>%2$s</%1$s>', 'li', __( 'Create Your Access Token', GLTW_DOMAIN ) );
+			printf( '<%1$s>%2$s</%1$s>', 'li', __( 'Copy and Pase the Customer Key &amp; Secret as well as the Access Key &amp; Secret.', GLTW_DOMAIN ) );
+			
+		echo '</ol>';
+		
+		echo '<ol style="clear:both;">';
+			printf( '<%1$s style="list-style-type:none; float: left; padding-right: 10px;"><a href="%2$s"><img width="100px" src="%2$s"/></a></%1$s>', 'li', plugins_url( 'images/create-twitter-plugin-01.png', __FILE__ ) );
+			printf( '<%1$s style="list-style-type:none; float: left; padding-right: 10px;"><a href="%2$s"><img width="100px" src="%2$s"/></a></%1$s>', 'li', plugins_url( 'images/create-twitter-plugin-02.png', __FILE__ ) );
+			printf( '<%1$s style="list-style-type:none; float: left; padding-right: 10px;"><a href="%2$s"><img width="100px" src="%2$s"/></a></%1$s>', 'li', plugins_url( 'images/create-twitter-plugin-03.png', __FILE__ ) );
+		echo '</ol>'; 
 	}
 	
 	/**
