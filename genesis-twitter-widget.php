@@ -31,6 +31,7 @@ License:
 */
 define( 'GLTW_DIR', dirname( __FILE__ ) );
 define( 'GLTW_INC', GLTW_DIR . '/includes' );
+define( 'GLTW_IMG', GLTW_DIR . '/images' );
 define( 'GLTW_API', GLTW_INC . '/api' );
 define( 'GLTW_DOMAIN', GLTW_DOMAIN );
 
@@ -40,6 +41,31 @@ function gltw_widget_init() {
 
 	load_plugin_textdomain( GLTW_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	
+}
+
+add_action( 'admin_notices', 'gltw_plugin_activation' );
+function gltw_plugin_activation() {
+	global $gltw_errors;
+	extract( gltw_api_config() );
+	
+	if ( empty( $consumer_key ) || empty( $consumer_secret ) || empty( $access_key ) || empty( $access_secret ) || ! empty( $gltw_errors ) ) {
+		printf(
+			'<%1$s class="%2$s">%3$s</%1$s>',
+			'div',
+			'error',
+			sprintf(
+				'<%1$s>%2$s</%1$s>', 
+				'p', 
+				sprintf(
+					'<%1$s>%2$s<a href="%3$s">%4$s</a>.</%1$s>',
+					'strong',
+					__( 'Please set the ', GLTW_DOMAIN ),
+					admin_url( 'admin.php?page=genesis-twitter-widget-settings' ),
+					__( 'Genesis Twitter Widget Settings', GLTW_DOMAIN )
+				)
+			)
+		);
+	}
 }
 
 add_action( 'widgets_init', 'gltw_load_widget', 25 );	
