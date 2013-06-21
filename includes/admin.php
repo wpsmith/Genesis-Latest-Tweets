@@ -141,11 +141,13 @@ class GLTW_Widget_Admin_Settings extends Genesis_Admin_Boxes {
 		add_meta_box( 'gltw-settings', __( 'Twitter API Settings', GLTW_DOMAIN ), array( $this, 'settings_box' ), $this->pagehook, 'main', 'high' );
 		add_meta_box( 'gltw-info', __( 'Twitter API Information', GLTW_DOMAIN ), array( $this, 'info_box' ), $this->pagehook, 'main', 'high' );
 		
-		$rate = $GLTW_API->api_get('application/rate_limit_status', array( 'resources' => 'application', ) );
-		if ( empty( $consumer_key ) || empty( $consumer_secret ) || empty( $access_key ) || empty( $access_secret ) || ( ! empty( $gltw_errors ) || isset( $rate['errors'] ) ) )
+		if ( empty( $consumer_key ) || empty( $consumer_secret ) || empty( $access_key ) || empty( $access_secret ) || ! empty( $gltw_errors ) ) {
 			add_meta_box( 'gltw-help', __( 'Help Setup', GLTW_DOMAIN ), array( $this, 'help_box' ), $this->pagehook, 'main', 'high' );
-
-
+		} else {
+			$rate = $GLTW_API->api_get('application/rate_limit_status', array( 'resources' => 'application', ) );
+			if ( isset( $rate['errors'] ) )
+				add_meta_box( 'gltw-help', __( 'Help Setup', GLTW_DOMAIN ), array( $this, 'help_box' ), $this->pagehook, 'main', 'high' );
+		}
 	}
 
 	function admin_notices() {
